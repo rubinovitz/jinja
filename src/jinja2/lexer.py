@@ -724,11 +724,11 @@ class Lexer:
         line_starting = True
 
         while True:
-            if (
-                stack[-1]
-                in (TOKEN_VARIABLE_BEGIN, TOKEN_BLOCK_BEGIN, TOKEN_LINESTATEMENT_BEGIN)
-                and source[pos : pos + 1] in ("'", '"')
-            ):
+            if stack[-1] in (
+                TOKEN_VARIABLE_BEGIN,
+                TOKEN_BLOCK_BEGIN,
+                TOKEN_LINESTATEMENT_BEGIN,
+            ) and source[pos : pos + 1] in ("'", '"'):
                 pos2 = find_string_end(source, pos)
 
                 if pos2 is None:
