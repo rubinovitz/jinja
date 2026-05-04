@@ -251,6 +251,29 @@ def compile_rules(environment: "Environment") -> list[tuple[str, str]]:
     return [x[1:] for x in sorted(rules, reverse=True)]
 
 
+def find_string_end(source: str, start: int) -> int | None:
+    quote = source[start]
+    pos = start + 1
+
+    while True:
+        end = source.find(quote, pos)
+
+        if end == -1:
+            return None
+
+        backslashes = 0
+        i = end - 1
+
+        while i > start and source[i] == "\\":
+            backslashes += 1
+            i -= 1
+
+        if backslashes % 2 == 0:
+            return end + 1
+
+        pos = end + 1
+
+
 class Failure:
     """Class that raises a `TemplateSyntaxError` if called.
     Used by the `Lexer` to specify known errors.
@@ -701,6 +724,28 @@ class Lexer:
         line_starting = True
 
         while True:
+            if (
+                stack[-1]
+                in (TOKEN_VARIABLE_BEGIN, TOKEN_BLOCK_BEGIN, TOKEN_LINESTATEMENT_BEGIN)
+                and source[pos : pos + 1] in ("'", '"')
+            ):
+                pos2 = find_string_end(source, pos)
+
+                if pos2 is None:
+                    raise TemplateSyntaxError(
+                        f"unexpected char {source[pos]!r} at {pos}",
+                        lineno,
+                        name,
+                        filename,
+                    )
+
+                data = source[pos:pos2]
+                yield lineno, TOKEN_STRING, data
+                lineno += data.count("\n")
+                line_starting = data[-1:] == "\n"
+                pos = pos2
+                continue
+
             # tokenizer loop
             for regex, tokens, new_state in statetokens:
                 m = regex.match(source, pos)

@@ -95,6 +95,12 @@ class TestLexer:
             assert tmpl.render() == char
         assert env.from_string('{{ "\N{HOT SPRINGS}" }}').render() == "\u2668"
 
+    def test_unclosed_string_with_many_escapes(self, env):
+        source = "{{ " + "'" + ("\\a" + "b" * 1000) * 1000 + "c"
+
+        with pytest.raises(TemplateSyntaxError):
+            env.parse(source)
+
     def test_bytefallback(self, env):
         from pprint import pformat
 
